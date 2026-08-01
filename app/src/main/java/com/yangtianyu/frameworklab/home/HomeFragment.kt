@@ -1,0 +1,48 @@
+package com.yangtianyu.frameworklab.home
+
+import android.os.Bundle
+import android.view.View
+import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.yangtianyu.frameworklab.R
+import com.yangtianyu.frameworklab.databinding.FragmentHomeBinding
+
+class HomeFragment : Fragment(R.layout.fragment_home) {
+
+    private var _binding: FragmentHomeBinding? = null
+    private val binding: FragmentHomeBinding
+        get() = checkNotNull(_binding)
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        _binding = FragmentHomeBinding.bind(view)
+
+        val experimentAdapter = ExperimentAdapter(::openExperiment)
+        binding.experimentList.apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            adapter = experimentAdapter
+            setHasFixedSize(true)
+        }
+        experimentAdapter.submitList(ExperimentCatalog.all())
+    }
+
+    private fun openExperiment(item: ExperimentItem) {
+        val navController = findNavController()
+        val canNavigate = ExperimentNavigationPolicy.canOpenImageLoader(
+            item = item,
+            isHomeCurrentDestination = navController.currentDestination?.id == R.id.homeFragment,
+        )
+        if (canNavigate) {
+            navController.navigate(
+                R.id.action_homeFragment_to_imageLoaderLabFragment,
+            )
+        }
+    }
+
+    override fun onDestroyView() {
+        binding.experimentList.adapter = null
+        _binding = null
+        super.onDestroyView()
+    }
+}

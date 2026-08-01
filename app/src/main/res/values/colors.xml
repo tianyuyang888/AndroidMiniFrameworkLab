@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="lab_primary">#3F51B5</color>
+    <color name="lab_primary_dark">#303F9F</color>
+    <color name="lab_accent">#FF9800</color>
+    <color name="lab_background">#F7F8FC</color>
+</resources>
