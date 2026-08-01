@@ -20,6 +20,7 @@
     │   └── imageloader/             20 张网络图片演示页
     └── mini-image-loader/           第一版图片加载 Android Library
         ├── MiniImageLoader          对外 API、线程池和主线程更新
+        ├── BitmapMemoryCache        基于 LruCache 的 Bitmap 内存缓存
         ├── HttpImageDownloader      HttpURLConnection 下载
         └── ImageUrlValidator        空 URL 与空白 URL 处理
 
@@ -49,10 +50,11 @@ Kotlin 调用：
 - 处理空 URL、网络异常、非 2xx、空响应和解码失败
 - 支持占位图与错误图资源 ID
 - 使用 keyed tag 防止 RecyclerView 复用后旧请求覆盖新图片
+- 使用最大堆内存的 1/8 作为 LruCache 容量，按 Bitmap 实际分配字节数计费
+- 缓存命中时直接显示 Bitmap，不进入下载线程池
 
 ## 暂不实现
 
-- 内存缓存
 - 磁盘缓存
 - 生命周期感知
 - 请求取消

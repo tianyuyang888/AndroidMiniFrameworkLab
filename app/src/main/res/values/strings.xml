@@ -5,7 +5,7 @@
     <string name="home_subtitle">Choose a module to review its current implementation.</string>
     <string name="open_experiment">Open experiment</string>
     <string name="image_loader_lab_title">Mini Image Loader</string>
-    <string name="image_loader_lab_status">V1 · HttpURLConnection · 4 download threads</string>
+    <string name="image_loader_lab_status">HttpURLConnection · LruCache · 4 download threads</string>
     <string name="image_loader_lab_description">Scroll through 20 network images. Every row uses a local placeholder and error drawable.</string>
     <string name="demo_image_content_description_default">Network image preview</string>
     <string name="demo_image_content_description">Network image preview %1$d</string>

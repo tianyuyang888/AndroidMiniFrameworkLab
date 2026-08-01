@@ -36,7 +36,7 @@
 - Produces: `operator fun BitmapMemoryCache.get(url: String): Bitmap?`
 - Produces: `fun BitmapMemoryCache.put(url: String, bitmap: Bitmap)`
 
-- [ ] **Step 1: Write the failing size-policy test**
+- [x] **Step 1: Write the failing size-policy test**
 
 Create `BitmapCacheSizingTest.kt`:
 
@@ -71,7 +71,7 @@ class BitmapCacheSizingTest {
 }
 ```
 
-- [ ] **Step 2: Run the test and verify RED**
+- [x] **Step 2: Run the test and verify RED**
 
 Run:
 
@@ -89,7 +89,7 @@ Because `AGENTS.md` requires a build after every modification, also run:
 
 Expected: `BUILD SUCCESSFUL`; the failing test source is not part of the Debug APK compilation.
 
-- [ ] **Step 3: Implement the minimal sizing policy and cache wrapper**
+- [x] **Step 3: Implement the minimal sizing policy and cache wrapper**
 
 Create `BitmapMemoryCache.kt`:
 
@@ -146,7 +146,7 @@ internal object BitmapCacheSizing {
 }
 ```
 
-- [ ] **Step 4: Run tests and build to verify GREEN**
+- [x] **Step 4: Run tests and build to verify GREEN**
 
 Run:
 
@@ -156,7 +156,7 @@ Run:
 
 Expected: `BitmapCacheSizingTest` passes, all existing tests pass, and `BUILD SUCCESSFUL` is printed.
 
-- [ ] **Step 5: Commit the focused cache component**
+- [x] **Step 5: Commit the focused cache component**
 
 ```powershell
 git add mini-image-loader/src/main/java/com/yangtianyu/frameworklab/imageloader/BitmapMemoryCache.kt mini-image-loader/src/test/java/com/yangtianyu/frameworklab/imageloader/BitmapCacheSizingTest.kt
@@ -176,7 +176,7 @@ git commit -m "feat: add bitmap LruCache component"
 - Consumes: `BitmapMemoryCache.put(url: String, bitmap: Bitmap)`
 - Preserves: `MiniImageLoader.load(String?, ImageView)` and `MiniImageLoader.load(String?, ImageView, Int, Int)`
 
-- [ ] **Step 1: Write a failing wiring test**
+- [x] **Step 1: Write a failing wiring test**
 
 Add this test to `MiniImageLoaderTest`:
 
@@ -196,7 +196,7 @@ fun ownsOneBitmapMemoryCache() {
 }
 ```
 
-- [ ] **Step 2: Run the test and verify RED**
+- [x] **Step 2: Run the test and verify RED**
 
 Run:
 
@@ -214,7 +214,7 @@ Then run the required APK compilation:
 
 Expected: `BUILD SUCCESSFUL`.
 
-- [ ] **Step 3: Add the cache instance and cache-first main-thread branch**
+- [x] **Step 3: Add the cache instance and cache-first main-thread branch**
 
 Replace `MiniImageLoader.kt` with this complete implementation:
 
@@ -388,7 +388,7 @@ object MiniImageLoader {
 }
 ```
 
-- [ ] **Step 4: Run module tests and required build to verify GREEN**
+- [x] **Step 4: Run module tests and required build to verify GREEN**
 
 Run:
 
@@ -398,7 +398,7 @@ Run:
 
 Expected: the new cache-ownership test and all existing tests pass; both modules assemble successfully.
 
-- [ ] **Step 5: Commit cache-first loading**
+- [x] **Step 5: Commit cache-first loading**
 
 ```powershell
 git add mini-image-loader/src/main/java/com/yangtianyu/frameworklab/imageloader/MiniImageLoader.kt mini-image-loader/src/test/java/com/yangtianyu/frameworklab/imageloader/MiniImageLoaderTest.kt
@@ -418,7 +418,7 @@ git commit -m "feat: use memory cache before downloading"
 - Documents: automatic in-process LruCache behavior and explicit exclusions
 - Preserves: existing app screen layout and MiniImageLoader public API
 
-- [ ] **Step 1: Update the README cache description**
+- [x] **Step 1: Update the README cache description**
 
 In the library structure list, add:
 
@@ -435,7 +435,7 @@ In “当前实现”, add:
 
 Remove `内存缓存` from “暂不实现”. Keep disk cache, lifecycle awareness, cancellation, request deduplication, retries, priorities, and transformations excluded.
 
-- [ ] **Step 2: Update the demo status text without changing layout**
+- [x] **Step 2: Update the demo status text without changing layout**
 
 Replace `image_loader_lab_status` in `strings.xml` with:
 
@@ -443,11 +443,11 @@ Replace `image_loader_lab_status` in `strings.xml` with:
 <string name="image_loader_lab_status">HttpURLConnection · LruCache · 4 download threads</string>
 ```
 
-- [ ] **Step 3: Mark the plan checklist complete during execution**
+- [x] **Step 3: Mark the plan checklist complete during execution**
 
 Change each completed `- [ ]` item in this plan to `- [x]` only after its command or edit has actually succeeded. Do not pre-check later steps.
 
-- [ ] **Step 4: Run full fresh verification**
+- [x] **Step 4: Run full fresh verification**
 
 Run:
 
@@ -457,7 +457,7 @@ Run:
 
 Expected: all unit tests pass, `BUILD SUCCESSFUL` is printed, and `app/build/outputs/apk/debug/app-debug.apk` exists and is non-empty.
 
-- [ ] **Step 5: Check scope and whitespace**
+- [x] **Step 5: Check scope and whitespace**
 
 Run:
 
@@ -468,7 +468,7 @@ git status --short
 
 Expected: no whitespace errors; only the memory-cache implementation, tests, README, status string, and this plan are changed or newly committed.
 
-- [ ] **Step 6: Commit documentation and verified plan state**
+- [x] **Step 6: Commit documentation and verified plan state**
 
 ```powershell
 git add README.md app/src/main/res/values/strings.xml docs/superpowers/plans/2026-08-01-mini-image-loader-memory-cache.md
