@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">Android Mini Framework Lab</string>
     <string name="home_title">Framework Experiments</string>
-    <string name="home_subtitle">Choose a module to inspect its project skeleton.</string>
+    <string name="home_subtitle">Choose a module to review its current implementation.</string>
     <string name="open_experiment">Open experiment</string>
     <string name="image_loader_lab_title">Mini Image Loader</string>
     <string name="image_loader_lab_status">V1 · HttpURLConnection · 4 download threads</string>

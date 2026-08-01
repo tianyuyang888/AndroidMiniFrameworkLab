@@ -7,6 +7,9 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.yangtianyu.frameworklab.databinding.ItemExperimentBinding
 
+/**
+ * 将实验目录绑定到首页 RecyclerView，并把点击事件交给 Fragment 处理。
+ */
 class ExperimentAdapter(
     private val onExperimentClick: (ExperimentItem) -> Unit,
 ) : ListAdapter<ExperimentItem, ExperimentAdapter.ExperimentViewHolder>(ExperimentDiffCallback) {

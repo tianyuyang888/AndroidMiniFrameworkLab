@@ -1,5 +1,7 @@
 # AndroidMiniFrameworkLab Project Skeleton Design
 
+> Historical snapshot: this document records the initial skeleton stage before the image loader was implemented. See the root README for the current project state.
+
 ## Goal
 
 Create a minimal Android project that opens directly in Android Studio, compiles with `assembleDebug`, and provides a clean foundation for framework experiments without implementing a real image loader yet.

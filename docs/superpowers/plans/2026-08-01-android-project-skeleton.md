@@ -1,5 +1,7 @@
 # AndroidMiniFrameworkLab Project Skeleton Implementation Plan
 
+> Historical plan: this file records the completed skeleton phase and is not the current feature boundary or completion checklist.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox syntax for tracking.
 
 **Goal:** Build a directly openable, XML-based Kotlin Android project with app and mini-image-loader modules and a working single-activity experiment browser.

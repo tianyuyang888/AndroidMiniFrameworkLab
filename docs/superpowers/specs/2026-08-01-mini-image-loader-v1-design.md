@@ -25,7 +25,7 @@ MiniImageLoader 保持 Kotlin object 外观，对外提供以下方法：
 - ImageUrlValidator：把 null、空串或纯空白 URL 判为无效，并返回 trim 后的有效 URL。
 - HttpImageDownloader：通过可替换的 HttpConnectionFactory 创建 HttpURLConnection，便于 JVM 单元测试。
 - HttpConnectionFactory：生产实现使用 URL(url).openConnection() 并校验为 HttpURLConnection。
-- Library 资源 ID：为 ImageView 保存当前请求 URL。结果回主线程后仅在 tag 仍匹配时更新，防止 RecyclerView 复用时旧请求覆盖新条目。
+- Library 资源 ID：为 ImageView 保存每次 load 创建的唯一 ImageRequestToken。结果回主线程后仅在 tag 仍是同一 token 时更新，防止 RecyclerView 复用或同 URL 连续请求时旧结果覆盖新条目。
 
 不提供请求对象、回调、取消 API、缓存 API 或生命周期 API。
 

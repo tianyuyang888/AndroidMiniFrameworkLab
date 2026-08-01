@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <item
-        name="mini_image_loader_request_url"
+        name="mini_image_loader_request_token"
         type="id" />
 </resources>

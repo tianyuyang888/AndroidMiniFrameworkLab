@@ -73,7 +73,7 @@ Kotlin 调用：
 Windows PowerShell：
 
     $env:JAVA_HOME = "<Android Studio 安装目录>\jbr"
-    .\gradlew.bat testDebugUnitTest
+    .\gradlew.bat test
     .\gradlew.bat lintDebug
     .\gradlew.bat assembleDebug
 

@@ -8,6 +8,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.yangtianyu.frameworklab.R
 import com.yangtianyu.frameworklab.databinding.FragmentHomeBinding
 
+/**
+ * 应用首页，使用 RecyclerView 展示当前可进入的实验模块。
+ */
 class HomeFragment : Fragment(R.layout.fragment_home) {
 
     private var _binding: FragmentHomeBinding? = null

@@ -57,7 +57,7 @@ object MiniImageLoader {
             val requestToken = ImageRequestToken(normalizedUrl.orEmpty())
 
             // 唯一 token 不占用普通 tag，也能区分同一个 URL 的连续两次请求。
-            imageView.setTag(R.id.mini_image_loader_request_url, requestToken)
+            imageView.setTag(R.id.mini_image_loader_request_token, requestToken)
             if (placeholderResId != NO_DRAWABLE_RESOURCE) {
                 imageView.setImageResource(placeholderResId)
             }
@@ -142,7 +142,7 @@ object MiniImageLoader {
         requestToken: ImageRequestToken,
     ): Boolean {
         return requestToken.matches(
-            imageView.getTag(R.id.mini_image_loader_request_url),
+            imageView.getTag(R.id.mini_image_loader_request_token),
         )
     }
 

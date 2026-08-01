@@ -1,5 +1,7 @@
 # Mini Image Loader V1 Implementation Plan
 
+> Historical plan: this file records the V1 implementation process; its checklist and workspace notes reflect the environment when the plan was written.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox syntax for tracking.
 
 **Goal:** Implement a first usable HttpURLConnection-based image loader and demonstrate it with at least 20 network images in the existing single-activity app.
@@ -19,7 +21,7 @@
 - Key implementation classes and non-obvious concurrency code require Chinese comments.
 - Do not add memory caching, disk caching, lifecycle awareness, cancellation, request deduplication, retries, transformations, or callbacks.
 - Keep the existing app and mini-image-loader modules; add no Gradle module or Activity.
-- The workspace is not a Git repository, so no commit step is executed.
+- At the time this plan was written, the workspace was not a Git repository, so no commit step was included.
 
 ---
 
@@ -143,9 +145,9 @@ The public signature is:
 
 Create one fixed four-thread ExecutorService, Handler(Looper.getMainLooper()), and HttpImageDownloader. A dispatchOnMain helper executes immediately when already on the main Looper and posts otherwise.
 
-On main: set R.id.mini_image_loader_request_url to the normalized URL or an empty marker, then set the placeholder when nonzero. Invalid URL immediately sets the error when nonzero.
+On main: create a unique ImageRequestToken for every load call, store it in R.id.mini_image_loader_request_token, then set the placeholder when nonzero. Invalid URL immediately sets the error when nonzero.
 
-In the pool: download bytes, decode with BitmapFactory.decodeByteArray, treat null as failure, catch Exception, and dispatch the result to main. Before rendering, compare the keyed tag to the request URL. Set the Bitmap on success or error resource on failure.
+In the pool: download bytes, decode with BitmapFactory.decodeByteArray, treat null as failure, catch Exception, and dispatch the result to main. Before rendering, require the keyed tag to reference the same request token. Set the Bitmap on success or error resource on failure.
 
 - [ ] **Step 4: Verify library tests and compilation**
 
