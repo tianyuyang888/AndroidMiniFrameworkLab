@@ -28,4 +28,18 @@ class MiniImageLoaderTest {
         assertTrue(staticLoadParameterCounts.contains(2))
         assertTrue(staticLoadParameterCounts.contains(4))
     }
+
+    @Test
+    fun ownsOneBitmapMemoryCache() {
+        val loaderClass = Class.forName(
+            MiniImageLoader::class.java.name,
+            false,
+            javaClass.classLoader,
+        )
+        val memoryCacheFieldCount = loaderClass.declaredFields.count { field ->
+            field.type == BitmapMemoryCache::class.java
+        }
+
+        assertEquals(1, memoryCacheFieldCount)
+    }
 }

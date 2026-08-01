@@ -35,6 +35,7 @@ object MiniImageLoader {
 
     private val mainHandler = Handler(Looper.getMainLooper())
     private val downloader = HttpImageDownloader()
+    private val memoryCache = BitmapMemoryCache()
 
     /**
      * 加载网络图片到指定 ImageView。
@@ -58,17 +59,28 @@ object MiniImageLoader {
 
             // 唯一 token 不占用普通 tag，也能区分同一个 URL 的连续两次请求。
             imageView.setTag(R.id.mini_image_loader_request_token, requestToken)
-            if (placeholderResId != NO_DRAWABLE_RESOURCE) {
-                imageView.setImageResource(placeholderResId)
-            }
 
             if (normalizedUrl == null) {
+                if (placeholderResId != NO_DRAWABLE_RESOURCE) {
+                    imageView.setImageResource(placeholderResId)
+                }
                 showErrorIfCurrent(
                     imageView = imageView,
                     requestToken = requestToken,
                     errorResId = errorResId,
                 )
                 return@dispatchOnMain
+            }
+
+            // 命中内存缓存时直接显示 Bitmap，避免占位图闪烁和重复网络任务。
+            val cachedBitmap = memoryCache[normalizedUrl]
+            if (cachedBitmap != null) {
+                imageView.setImageBitmap(cachedBitmap)
+                return@dispatchOnMain
+            }
+
+            if (placeholderResId != NO_DRAWABLE_RESOURCE) {
+                imageView.setImageResource(placeholderResId)
             }
 
             downloadExecutor.execute {
@@ -87,6 +99,10 @@ object MiniImageLoader {
         @DrawableRes errorResId: Int,
     ) {
         val bitmap = downloadAndDecode(requestToken.url)
+        if (bitmap != null) {
+            // 成功解码的结果可供后续相同 URL 的请求直接复用。
+            memoryCache.put(requestToken.url, bitmap)
+        }
         dispatchOnMain {
             if (!isCurrentRequest(imageView, requestToken)) {
                 return@dispatchOnMain
