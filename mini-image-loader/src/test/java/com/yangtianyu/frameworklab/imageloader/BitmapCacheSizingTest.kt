@@ -20,7 +20,13 @@ class BitmapCacheSizingTest {
     }
 
     @Test
+    fun clampsMaximumHeapCacheCapacityToIntMaximum() {
+        assertEquals(Int.MAX_VALUE, BitmapCacheSizing.maxSizeKilobytes(Long.MAX_VALUE))
+    }
+
+    @Test
     fun roundsBitmapAllocationUpToWholeKilobytes() {
+        assertEquals(1, BitmapCacheSizing.entrySizeKilobytes(0))
         assertEquals(1, BitmapCacheSizing.entrySizeKilobytes(1))
         assertEquals(1, BitmapCacheSizing.entrySizeKilobytes(1024))
         assertEquals(2, BitmapCacheSizing.entrySizeKilobytes(1025))

@@ -11,9 +11,9 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * 第一版轻量图片加载器入口。
+ * 轻量图片加载器入口，包含内存缓存。
  *
- * 当前只负责 HTTP 下载、Bitmap 解码和线程切换，不包含缓存、请求取消或生命周期感知。
+ * 当前负责 HTTP 下载、Bitmap 解码、线程切换和内存缓存；不包含磁盘缓存、请求取消、请求去重或生命周期感知。
  */
 object MiniImageLoader {
 
