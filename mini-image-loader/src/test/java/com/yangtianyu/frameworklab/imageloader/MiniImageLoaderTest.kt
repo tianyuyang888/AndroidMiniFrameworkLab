@@ -1,5 +1,6 @@
 package com.yangtianyu.frameworklab.imageloader
 
+import android.widget.ImageView
 import java.lang.reflect.Modifier
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -27,6 +28,22 @@ class MiniImageLoaderTest {
 
         assertTrue(staticLoadParameterCounts.contains(2))
         assertTrue(staticLoadParameterCounts.contains(4))
+    }
+
+    @Test
+    fun exposesImageViewClearMethod() {
+        val loaderClass = Class.forName(
+            MiniImageLoader::class.java.name,
+            false,
+            javaClass.classLoader,
+        )
+        val exposesClear = loaderClass.declaredMethods.any { method ->
+            method.name == "clear" &&
+                Modifier.isStatic(method.modifiers) &&
+                method.parameterTypes.contentEquals(arrayOf(ImageView::class.java))
+        }
+
+        assertTrue(exposesClear)
     }
 
     @Test
