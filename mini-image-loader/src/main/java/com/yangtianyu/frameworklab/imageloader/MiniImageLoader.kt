@@ -97,6 +97,9 @@ object MiniImageLoader {
      * 回收或停止展示图片时，使旧请求失效并立即清空目标控件。
      *
      * 该操作不会取消后台下载；成功结果仍可写入内存缓存。
+     * 若 clear() 与 load() 存在顺序依赖，必须从主线程按顺序调用；后台线程调用 clear()
+     * 会异步投递到主线程 Looper，若随后在主线程直接调用 load()，两者的实际执行先后取决于
+     * Looper 入队顺序。
      */
     @JvmStatic
     fun clear(imageView: ImageView) {
