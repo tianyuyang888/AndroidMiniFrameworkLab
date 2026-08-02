@@ -36,6 +36,11 @@ class ImageDemoAdapter :
         )
     }
 
+    override fun onViewRecycled(holder: ImageDemoViewHolder) {
+        holder.recycle()
+        super.onViewRecycled(holder)
+    }
+
     class ImageDemoViewHolder(
         private val binding: ItemImageDemoBinding,
     ) : RecyclerView.ViewHolder(binding.root) {
@@ -57,6 +62,13 @@ class ImageDemoAdapter :
                 placeholderResId = R.drawable.image_placeholder,
                 errorResId = R.drawable.image_error,
             )
+        }
+
+        /**
+         * ViewHolder 进入回收池时立即清空图片，并阻止旧请求继续回写。
+         */
+        fun recycle() {
+            MiniImageLoader.clear(binding.demoImage)
         }
     }
 
