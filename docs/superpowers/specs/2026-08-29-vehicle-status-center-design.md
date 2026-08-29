@@ -63,10 +63,13 @@ Service 不导出给其他应用，只允许当前应用绑定。Library Manifes
 - `batteryPercent: Int`，范围 0～100。
 - `rangeKm: Int`，范围 0～2000。
 - 四个车门的开关状态。
+- `areDoorsLocked: Boolean`，表示全部车门当前是否上锁。
 - `temperatureCelsius: Int`，范围 16～30。
 - `fanSpeed: Int`，范围 0～7。
 - `isAcOn: Boolean`。
 - `updatedAtElapsedRealtime: Long`，使用单调时钟判断数据是否过期。
+
+App 在连接状态不是 `Connected`，或当前单调时间距离快照时间超过 3 秒时，将快照标记为过期。
 
 服务端只发布通过范围检查的快照。发现异常值时保留上一份有效数据并记录日志，不发布部分非法状态。
 
