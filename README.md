@@ -49,9 +49,21 @@ Kotlin 调用：
 - 所有 ImageView 更新切换到主线程
 - 处理空 URL、网络异常、非 2xx、空响应和解码失败
 - 支持占位图与错误图资源 ID
-- 使用 keyed tag 防止 RecyclerView 复用后旧请求覆盖新图片
+- 每次加载使用唯一请求 token，结果回到主线程后只有 token 仍匹配时才允许更新 ImageView
+- ViewHolder 回收时主动清空 ImageView 并替换 token，阻止回收池中的旧请求回写
 - 使用最大堆内存的 1/8 作为 LruCache 容量，按 Bitmap 实际分配字节数计费
 - 缓存命中时直接显示 Bitmap，不进入下载线程池
+
+## RecyclerView 图片为什么会错位
+
+RecyclerView 会复用 ViewHolder。同一个 ImageView 先为位置 A 发起异步下载，随后可能被重新绑定到位置 B；如果 A 的结果较晚返回并直接写入控件，B 就会显示 A 的图片。
+
+本项目使用两层保护：
+
+1. 每次 `load()` 都写入唯一请求 token，旧请求回到主线程时必须验证 token，避免覆盖已经重新绑定的新位置。
+2. `onViewRecycled()` 调用 `MiniImageLoader.clear()`，立即清空旧图片并替换 token，避免回收池阶段仍被旧请求更新。
+
+`clear()` 不取消后台下载。成功结果仍可进入 LruCache，但已经回收或重新绑定的 ImageView 不会接收它。
 
 ## 暂不实现
 

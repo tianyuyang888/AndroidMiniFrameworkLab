@@ -15,6 +15,14 @@ class ImageRequestTokenTest {
         assertFalse(first.matches(second))
     }
 
+    @Test
+    fun recycledTargetRejectsRequestCreatedBeforeRecycle() {
+        val requestBeforeRecycle = ImageRequestToken(TEST_URL)
+        val tokenAfterRecycle = ImageRequestToken("")
+
+        assertFalse(requestBeforeRecycle.matches(tokenAfterRecycle))
+    }
+
     private companion object {
         const val TEST_URL = "https://example.com/image.jpg"
     }

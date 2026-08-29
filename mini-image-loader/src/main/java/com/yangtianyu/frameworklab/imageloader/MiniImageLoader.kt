@@ -93,6 +93,26 @@ object MiniImageLoader {
         }
     }
 
+    /**
+     * 回收或停止展示图片时，使旧请求失效并立即清空目标控件。
+     *
+     * 该操作不会取消后台下载；成功结果仍可写入内存缓存。
+     * 若 clear() 与 load() 存在顺序依赖，必须从主线程按顺序调用；后台线程调用 clear()
+     * 会异步投递到主线程 Looper，若随后在主线程直接调用 load()，两者的实际执行先后取决于
+     * Looper 入队顺序。
+     */
+    @JvmStatic
+    fun clear(imageView: ImageView) {
+        dispatchOnMain {
+            // 新 token 会让所有旧请求在回写前的身份校验中失败。
+            imageView.setTag(
+                R.id.mini_image_loader_request_token,
+                ImageRequestToken(CLEARED_REQUEST_URL),
+            )
+            imageView.setImageDrawable(null)
+        }
+    }
+
     private fun loadInBackground(
         requestToken: ImageRequestToken,
         imageView: ImageView,
@@ -164,4 +184,5 @@ object MiniImageLoader {
 
     private const val DOWNLOAD_THREAD_COUNT = 4
     private const val NO_DRAWABLE_RESOURCE = 0
+    private const val CLEARED_REQUEST_URL = ""
 }
