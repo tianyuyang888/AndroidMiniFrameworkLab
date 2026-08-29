@@ -3,6 +3,7 @@ package com.yangtianyu.frameworklab.vehicle
 import android.os.Parcel
 import android.os.Parcelable
 
+/** 通过 AIDL 传递的同一时刻车辆状态快照。 */
 data class VehicleSnapshot(
     val speedKph: Int,
     val gear: VehicleGear,
@@ -18,6 +19,7 @@ data class VehicleSnapshot(
     val isAcOn: Boolean,
     val updatedAtElapsedRealtime: Long,
 ) : Parcelable {
+    // Parcelable 写入与读取顺序必须保持一致，否则跨进程还原会错位。
     private constructor(parcel: Parcel) : this(
         speedKph = parcel.readInt(),
         gear = VehicleGear.fromCode(parcel.readInt()),
