@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "AndroidMiniFrameworkLab"
-include(":app", ":mini-image-loader")
+include(":app", ":mini-image-loader", ":mini-vehicle-service")
