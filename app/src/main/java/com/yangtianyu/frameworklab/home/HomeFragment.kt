@@ -32,14 +32,16 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
     private fun openExperiment(item: ExperimentItem) {
         val navController = findNavController()
-        val canNavigate = ExperimentNavigationPolicy.canOpenImageLoader(
+        val destination = ExperimentNavigationPolicy.destinationFor(
             item = item,
             isHomeCurrentDestination = navController.currentDestination?.id == R.id.homeFragment,
         )
-        if (canNavigate) {
-            navController.navigate(
-                R.id.action_homeFragment_to_imageLoaderLabFragment,
-            )
+        when (destination) {
+            ExperimentDestination.IMAGE_LOADER ->
+                navController.navigate(R.id.action_homeFragment_to_imageLoaderLabFragment)
+            ExperimentDestination.VEHICLE_STATUS ->
+                navController.navigate(R.id.action_homeFragment_to_vehicleDashboardFragment)
+            null -> Unit
         }
     }
 

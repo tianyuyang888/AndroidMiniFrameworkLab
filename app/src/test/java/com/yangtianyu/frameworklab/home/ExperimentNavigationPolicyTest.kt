@@ -1,27 +1,33 @@
 package com.yangtianyu.frameworklab.home
 
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class ExperimentNavigationPolicyTest {
 
-    private val imageLoaderItem = ExperimentCatalog.all().single()
+    private val imageLoaderItem = ExperimentCatalog.all().first()
+    private val vehicleStatusItem = ExperimentCatalog.all().last()
 
     @Test
-    fun opensImageLoaderWhileHomeIsCurrent() {
-        assertTrue(
-            ExperimentNavigationPolicy.canOpenImageLoader(
+    fun mapsRegisteredExperimentsWhileHomeIsCurrent() {
+        assertEquals(
+            ExperimentDestination.IMAGE_LOADER,
+            ExperimentNavigationPolicy.destinationFor(
                 item = imageLoaderItem,
                 isHomeCurrentDestination = true,
             ),
+        )
+        assertEquals(
+            ExperimentDestination.VEHICLE_STATUS,
+            ExperimentNavigationPolicy.destinationFor(vehicleStatusItem, true),
         )
     }
 
     @Test
     fun ignoresSecondClickAfterLeavingHome() {
-        assertFalse(
-            ExperimentNavigationPolicy.canOpenImageLoader(
+        assertNull(
+            ExperimentNavigationPolicy.destinationFor(
                 item = imageLoaderItem,
                 isHomeCurrentDestination = false,
             ),
@@ -36,8 +42,8 @@ class ExperimentNavigationPolicyTest {
             description = "Not registered",
         )
 
-        assertFalse(
-            ExperimentNavigationPolicy.canOpenImageLoader(
+        assertNull(
+            ExperimentNavigationPolicy.destinationFor(
                 item = unknownItem,
                 isHomeCurrentDestination = true,
             ),
