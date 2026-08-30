@@ -9,12 +9,12 @@ import android.os.IBinder
 import android.os.Looper
 import android.os.RemoteException
 import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 
 /**
  * App 进程中的车辆服务客户端。
  *
- * 连接状态只在主线程修改；同步 AIDL 调用统一进入单线程执行器，避免阻塞界面。
+ * 每次绑定都有独立代次、ServiceConnection 和 AIDL callback。旧代次事件只会被丢弃，
+ * 同步 AIDL 调用统一进入可重启的单线程执行器，避免阻塞主线程。
  */
 class VehicleServiceClient(
     context: Context,
@@ -26,89 +26,69 @@ class VehicleServiceClient(
         fun onCommandResult(result: Int)
     }
 
+    private class BindingSession(
+        val generation: Long,
+        val connection: ServiceConnection,
+    ) {
+        var isBound: Boolean = false
+        var disconnectHandled: Boolean = false
+        var binder: IBinder? = null
+        var service: IVehicleService? = null
+        var callback: IVehicleStateCallback? = null
+        var deathRecipient: IBinder.DeathRecipient? = null
+    }
+
+    private data class RemoteRegistration(
+        val service: IVehicleService,
+        val callback: IVehicleStateCallback,
+    )
+
     private val applicationContext = context.applicationContext
     private val mainHandler = Handler(Looper.getMainLooper())
-    private val controlExecutor: ExecutorService = Executors.newSingleThreadExecutor()
-
-    @Volatile
-    private var service: IVehicleService? = null
-    private var serviceBinder: IBinder? = null
-    private var deathRecipient: IBinder.DeathRecipient? = null
-    private var started = false
-    private var isBound = false
-    private var disconnectHandled = false
+    private val generationTracker = VehicleClientGenerationTracker()
+    private val executorOwner = RestartableExecutorOwner()
+    private var activeSession: BindingSession? = null
     private var attemptsMade = 0
-    private var connectionGeneration = 0
     private var retryRunnable: Runnable? = null
 
-    private val callback = object : IVehicleStateCallback.Stub() {
-        override fun onVehicleSnapshotChanged(snapshot: VehicleSnapshot?) {
-            if (snapshot != null) {
-                mainHandler.post {
-                    if (started) listener.onSnapshot(snapshot)
-                }
-            }
-        }
-    }
-
-    private val connection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
-            if (binder == null) {
-                runOnMain(::handleUnexpectedDisconnect)
-                return
-            }
-            runOnMain { finishConnection(binder) }
-        }
-
-        override fun onServiceDisconnected(name: ComponentName?) {
-            runOnMain(::handleUnexpectedDisconnect)
-        }
-
-        override fun onBindingDied(name: ComponentName?) {
-            // Android 8.0 及以上由系统回调；API 24～25 不主动调用此方法。
-            runOnMain(::handleUnexpectedDisconnect)
-        }
-    }
-
     fun start() = runOnMain {
-        if (started) return@runOnMain
-        started = true
+        if (generationTracker.isStarted) return@runOnMain
+        generationTracker.start()
         attemptsMade = 0
-        beginBind()
+        executorOwner.acquire()
+        beginBind(generationTracker.nextConnection())
     }
 
     fun stop() = runOnMain {
-        started = false
-        connectionGeneration += 1
-        // Handler 只属于当前客户端，可以一次清除快照、结果和重连等全部待处理消息。
+        generationTracker.stop()
+        // Handler 只属于当前客户端，可清除快照、结果和重连等全部待处理消息。
         mainHandler.removeCallbacksAndMessages(null)
         retryRunnable = null
 
-        val oldService = service
-        clearBinder()
-        safelyUnbind()
-        disconnectHandled = false
+        val session = activeSession
+        activeSession = null
+        val registration = session?.let(::detachSession)
         notifyStatus(VehicleConnectionStatus.DISCONNECTED)
 
-        if (oldService != null) {
-            controlExecutor.execute {
-                try {
-                    oldService.unregisterCallback(callback)
-                } catch (_: RemoteException) {
-                    // 主动停止后的远端异常不应触发自动重连。
-                }
-            }
+        // 注销排在已提交指令之后；迟到结果会因代次失效而被丢弃。
+        executorOwner.shutdownAfter {
+            registration?.let(::unregisterQuietly)
         }
     }
 
     fun retryNow() = runOnMain {
-        started = true
+        if (!generationTracker.isStarted) generationTracker.start()
         attemptsMade = 0
-        connectionGeneration += 1
         removePendingRetry()
-        clearBinder()
-        safelyUnbind()
-        beginBind()
+
+        // 先产生新 token 使旧事件失效，再清理旧连接并开始新绑定。
+        val generation = generationTracker.nextConnection()
+        val oldSession = activeSession
+        activeSession = null
+        val registration = oldSession?.let(::detachSession)
+        val executor = executorOwner.acquire()
+        registration?.let { executor.execute { unregisterQuietly(it) } }
+        beginBind(generation)
     }
 
     fun setTemperature(value: Int) = executeCommand { it.setTemperature(value) }
@@ -123,79 +103,109 @@ class VehicleServiceClient(
     fun requestSimulatedProcessDeath() =
         executeCommand { it.requestSimulatedProcessDeath() }
 
-    private fun beginBind() {
-        if (!started) return
-        disconnectHandled = false
+    private fun beginBind(generation: Long) {
+        if (!generationTracker.isCurrent(generation)) return
+        executorOwner.acquire()
         notifyStatus(VehicleConnectionStatus.CONNECTING)
+
+        lateinit var session: BindingSession
+        val connection = object : ServiceConnection {
+            override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
+                runOnMain {
+                    if (!isActive(session)) return@runOnMain
+                    if (binder == null) {
+                        handleUnexpectedDisconnect(session.generation)
+                    } else {
+                        finishConnection(session, binder)
+                    }
+                }
+            }
+
+            override fun onServiceDisconnected(name: ComponentName?) {
+                runOnMain { handleUnexpectedDisconnect(session.generation) }
+            }
+
+            override fun onBindingDied(name: ComponentName?) {
+                // Android 8.0 及以上由系统回调；API 24～25 不主动调用此方法。
+                runOnMain { handleUnexpectedDisconnect(session.generation) }
+            }
+        }
+        session = BindingSession(generation, connection)
+        activeSession = session
+
         val intent = Intent(applicationContext, VehicleDataService::class.java)
-        isBound = try {
+        session.isBound = try {
             applicationContext.bindService(intent, connection, Context.BIND_AUTO_CREATE)
         } catch (_: SecurityException) {
             false
         }
-        if (!isBound) handleUnexpectedDisconnect()
+        if (!session.isBound) handleUnexpectedDisconnect(generation)
     }
 
-    private fun finishConnection(binder: IBinder) {
-        if (!started) return
-        serviceBinder = binder
-        service = IVehicleService.Stub.asInterface(binder)
-        val generation = ++connectionGeneration
-        val recipient = IBinder.DeathRecipient {
-            runOnMain {
-                if (generation == connectionGeneration && serviceBinder === binder) {
-                    handleUnexpectedDisconnect()
+    private fun finishConnection(session: BindingSession, binder: IBinder) {
+        if (!isActive(session)) return
+        val connectedService = IVehicleService.Stub.asInterface(binder)
+        val generation = session.generation
+        val callback = object : IVehicleStateCallback.Stub() {
+            override fun onVehicleSnapshotChanged(snapshot: VehicleSnapshot?) {
+                if (snapshot == null) return
+                mainHandler.post {
+                    if (isActive(session) && session.binder === binder) {
+                        listener.onSnapshot(snapshot)
+                    }
                 }
             }
         }
-        deathRecipient = recipient
+        val deathRecipient = IBinder.DeathRecipient {
+            runOnMain { handleUnexpectedDisconnect(generation) }
+        }
+        session.binder = binder
+        session.service = connectedService
+        session.callback = callback
+        session.deathRecipient = deathRecipient
 
-        controlExecutor.execute {
+        val executor = executorOwner.acquire()
+        executor.execute {
             try {
-                binder.linkToDeath(recipient, 0)
-                val connectedService = IVehicleService.Stub.asInterface(binder)
+                binder.linkToDeath(deathRecipient, 0)
                 connectedService.registerCallback(callback)
                 val firstSnapshot = connectedService.currentSnapshot
                 mainHandler.post {
-                    if (!started || generation != connectionGeneration || serviceBinder !== binder) {
-                        return@post
-                    }
+                    if (!isActive(session) || session.binder !== binder) return@post
                     attemptsMade = 0
-                    disconnectHandled = false
+                    session.disconnectHandled = false
                     listener.onSnapshot(firstSnapshot)
                     notifyStatus(VehicleConnectionStatus.CONNECTED)
                 }
             } catch (_: RemoteException) {
-                runOnMain {
-                    if (generation == connectionGeneration && serviceBinder === binder) {
-                        handleUnexpectedDisconnect()
-                    }
-                }
+                runOnMain { handleUnexpectedDisconnect(generation) }
             }
         }
     }
 
     private fun executeCommand(command: (IVehicleService) -> Int) {
         runOnMain {
-            val connectedService = service
-            if (connectedService == null) {
+            val session = activeSession
+            val connectedService = session?.service
+            if (session == null || connectedService == null || !isActive(session)) {
                 listener.onCommandResult(VehicleCommandResult.SERVICE_UNAVAILABLE)
                 return@runOnMain
             }
-            val generation = connectionGeneration
-            controlExecutor.execute {
+            val generation = session.generation
+            val executor: ExecutorService = executorOwner.acquire()
+            executor.execute {
                 try {
                     val result = command(connectedService)
                     mainHandler.post {
-                        if (started && generation == connectionGeneration && service === connectedService) {
+                        if (isActive(session) && session.service === connectedService) {
                             listener.onCommandResult(result)
                         }
                     }
                 } catch (_: RemoteException) {
                     mainHandler.post {
-                        if (started && generation == connectionGeneration && service === connectedService) {
+                        if (isActive(session) && session.service === connectedService) {
                             listener.onCommandResult(VehicleCommandResult.SERVICE_UNAVAILABLE)
-                            handleUnexpectedDisconnect()
+                            handleUnexpectedDisconnect(generation)
                         }
                     }
                 }
@@ -203,48 +213,69 @@ class VehicleServiceClient(
         }
     }
 
-    /** 所有非主动断连入口最终都调用此函数，并由 reducer 决定是否继续重连。 */
-    private fun handleUnexpectedDisconnect() {
-        if (disconnectHandled) return
-        disconnectHandled = true
-        connectionGeneration += 1
+    /** 所有当前代次的非主动断连都由 reducer 决定是否继续重连。 */
+    private fun handleUnexpectedDisconnect(generation: Long) {
+        val session = activeSession ?: return
+        if (!isActive(session) || session.generation != generation || session.disconnectHandled) return
+        session.disconnectHandled = true
+        activeSession = null
+        detachSession(session)
         removePendingRetry()
-        clearBinder()
-        safelyUnbind()
 
-        val decision = VehicleReconnectReducer.onUnexpectedDisconnect(started, attemptsMade)
+        val decision = VehicleReconnectReducer.onUnexpectedDisconnect(
+            started = generationTracker.isStarted,
+            attemptsMade = attemptsMade,
+        )
         attemptsMade = decision.nextAttempt
         notifyStatus(decision.status)
         val delayMs = decision.delayMs ?: return
         val retry = Runnable {
             retryRunnable = null
-            if (started) beginBind()
+            if (generationTracker.isStarted) {
+                beginBind(generationTracker.nextConnection())
+            }
         }
         retryRunnable = retry
         mainHandler.postDelayed(retry, delayMs)
     }
 
-    private fun clearBinder() {
+    private fun isActive(session: BindingSession): Boolean =
+        generationTracker.isCurrent(session.generation) && activeSession === session
+
+    /** 主线程解除当前代次的死亡监听和 ServiceConnection，并返回远程注册信息。 */
+    private fun detachSession(session: BindingSession): RemoteRegistration? {
+        val binder = session.binder
+        val recipient = session.deathRecipient
         try {
-            val binder = serviceBinder
-            val recipient = deathRecipient
             if (binder != null && recipient != null) binder.unlinkToDeath(recipient, 0)
         } catch (_: NoSuchElementException) {
-            // Binder 已经死亡或未成功注册时无需再次解绑死亡通知。
+            // Binder 已死亡或未完成 linkToDeath 时无需重复解除。
         }
-        deathRecipient = null
-        serviceBinder = null
-        service = null
+
+        if (session.isBound) {
+            try {
+                applicationContext.unbindService(session.connection)
+            } catch (_: IllegalArgumentException) {
+                // 系统已解绑时只需收敛本地状态。
+            }
+            session.isBound = false
+        }
+
+        val service = session.service
+        val callback = session.callback
+        session.binder = null
+        session.service = null
+        session.callback = null
+        session.deathRecipient = null
+        return if (service != null && callback != null) RemoteRegistration(service, callback) else null
     }
 
-    private fun safelyUnbind() {
-        if (!isBound) return
+    private fun unregisterQuietly(registration: RemoteRegistration) {
         try {
-            applicationContext.unbindService(connection)
-        } catch (_: IllegalArgumentException) {
-            // 系统已完成解绑时保持客户端状态收敛即可。
+            registration.service.unregisterCallback(registration.callback)
+        } catch (_: RemoteException) {
+            // 清理旧代次失败不应影响当前连接或触发自动重连。
         }
-        isBound = false
     }
 
     private fun removePendingRetry() {
