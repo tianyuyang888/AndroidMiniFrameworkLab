@@ -20,6 +20,8 @@ import java.util.concurrent.TimeUnit
 class VehicleDataService : Service() {
     private val callbacks = RemoteCallbackList<IVehicleStateCallback>()
     private val stateExecutor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
+    @Volatile
+    private var isAutoSimulationPaused = false
     private val store = VehicleStateStore(
         VehicleSnapshot.stoppedDefault(SystemClock.elapsedRealtime()),
     )
@@ -111,14 +113,23 @@ class VehicleDataService : Service() {
     override fun onCreate() {
         super.onCreate()
         stateExecutor.scheduleAtFixedRate(
-            { publish(FakeVehicleDataSource.next(store.current(), SystemClock.elapsedRealtime())) },
+            {
+                if (!isAutoSimulationPaused) {
+                    publish(FakeVehicleDataSource.next(store.current(), SystemClock.elapsedRealtime()))
+                }
+            },
             1,
             1,
             TimeUnit.SECONDS,
         )
     }
 
-    override fun onBind(intent: Intent?): IBinder = binder
+    override fun onBind(intent: Intent?): IBinder {
+        // 仅 Debug 测试绑定可暂停自动刷新；Release 即使携带 extra 也必须忽略。
+        isAutoSimulationPaused = isDebuggable() &&
+            intent?.getBooleanExtra(EXTRA_PAUSE_AUTO_SIMULATION, false) == true
+        return binder
+    }
 
     override fun onDestroy() {
         callbacks.kill()
@@ -156,4 +167,9 @@ class VehicleDataService : Service() {
 
     private fun isDebuggable(): Boolean =
         applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
+
+    companion object {
+        const val EXTRA_PAUSE_AUTO_SIMULATION =
+            "com.yangtianyu.frameworklab.vehicle.extra.PAUSE_AUTO_SIMULATION"
+    }
 }

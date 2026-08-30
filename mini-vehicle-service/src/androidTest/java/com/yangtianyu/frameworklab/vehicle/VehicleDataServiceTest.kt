@@ -40,7 +40,10 @@ class VehicleDataServiceTest {
         }
 
         val bound = context.bindService(
-            Intent(context, VehicleDataService::class.java),
+            Intent(context, VehicleDataService::class.java).putExtra(
+                VehicleDataService.EXTRA_PAUSE_AUTO_SIMULATION,
+                true,
+            ),
             connection,
             Context.BIND_AUTO_CREATE,
         )
@@ -49,6 +52,10 @@ class VehicleDataServiceTest {
             assertTrue(connected.await(3, TimeUnit.SECONDS))
             assertNotNull(service?.currentSnapshot)
             assertTrue(snapshotReceived.await(3, TimeUnit.SECONDS))
+
+            val pausedSnapshot = requireNotNull(service?.currentSnapshot)
+            Thread.sleep(1_200)
+            assertEquals(pausedSnapshot, service?.currentSnapshot)
 
             val parked = requireNotNull(service?.currentSnapshot).copy(
                 speedKph = 0,
