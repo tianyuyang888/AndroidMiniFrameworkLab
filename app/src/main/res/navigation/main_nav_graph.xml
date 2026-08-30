@@ -11,11 +11,19 @@
         <action
             android:id="@+id/action_homeFragment_to_imageLoaderLabFragment"
             app:destination="@id/imageLoaderLabFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_vehicleDashboardFragment"
+            app:destination="@id/vehicleDashboardFragment" />
     </fragment>
 
     <fragment
         android:id="@+id/imageLoaderLabFragment"
         android:name="com.yangtianyu.frameworklab.imageloader.ImageLoaderLabFragment"
         android:label="@string/image_loader_lab_title" />
+
+    <fragment
+        android:id="@+id/vehicleDashboardFragment"
+        android:name="com.yangtianyu.frameworklab.vehicle.VehicleDashboardFragment"
+        android:label="@string/vehicle_dashboard_title" />
 
 </navigation>

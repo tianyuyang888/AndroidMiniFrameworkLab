@@ -6,9 +6,9 @@ import org.junit.Test
 class ExperimentCatalogTest {
 
     @Test
-    fun containsMiniImageLoaderEntry() {
+    fun containsImageLoaderAndVehicleStatusEntries() {
         assertEquals(
-            listOf("mini-image-loader"),
+            listOf("mini-image-loader", "vehicle-status-center"),
             ExperimentCatalog.all().map(ExperimentItem::id),
         )
     }

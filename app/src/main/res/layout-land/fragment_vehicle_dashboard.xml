@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/vehicle_background"
+    android:orientation="horizontal"
+    android:padding="20dp">
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="3"
+        android:background="@color/vehicle_card"
+        android:gravity="center_vertical"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:id="@+id/connection_status_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/vehicle_connection_disconnected"
+            android:textColor="@color/vehicle_ok"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/stale_banner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/vehicle_data_stale"
+            android:textColor="@color/vehicle_warning"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/speed_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/vehicle_value_unavailable"
+            android:textColor="@color/vehicle_text_primary"
+            android:textSize="52sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/gear_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/vehicle_value_unavailable"
+            android:textColor="@color/vehicle_ok"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/battery_text"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/vehicle_value_unavailable"
+                android:textColor="@color/vehicle_text_primary"
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/range_text"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/vehicle_value_unavailable"
+                android:textColor="@color/vehicle_text_secondary"
+                android:textSize="18sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/door_status_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/vehicle_value_unavailable"
+            android:textColor="@color/vehicle_text_primary"
+            android:textSize="18sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_marginStart="16dp"
+        android:layout_weight="2"
+        android:background="@color/vehicle_card"
+        android:gravity="center_vertical"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/vehicle_climate_title"
+            android:textColor="@color/vehicle_text_primary"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/temperature_decrease_button"
+                android:layout_width="48dp"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/vehicle_temperature_decrease_description"
+                android:text="@string/vehicle_temperature_decrease" />
+
+            <TextView
+                android:id="@+id/temperature_text"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="@string/vehicle_value_unavailable"
+                android:textColor="@color/vehicle_text_primary"
+                android:textSize="32sp" />
+
+            <Button
+                android:id="@+id/temperature_increase_button"
+                android:layout_width="48dp"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/vehicle_temperature_increase_description"
+                android:text="@string/vehicle_temperature_increase" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/fan_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/vehicle_value_unavailable"
+            android:textColor="@color/vehicle_text_secondary" />
+
+        <Button
+            android:id="@+id/ac_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/vehicle_value_unavailable" />
+
+        <Button
+            android:id="@+id/unlock_doors_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/vehicle_unlock_doors" />
+
+        <TextView
+            android:id="@+id/restriction_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/vehicle_restriction_active"
+            android:textColor="@color/vehicle_warning" />
+
+        <Button
+            android:id="@+id/retry_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/vehicle_retry" />
+
+        <Button
+            android:id="@+id/simulate_disconnect_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/vehicle_simulate_disconnect" />
+    </LinearLayout>
+</LinearLayout>
