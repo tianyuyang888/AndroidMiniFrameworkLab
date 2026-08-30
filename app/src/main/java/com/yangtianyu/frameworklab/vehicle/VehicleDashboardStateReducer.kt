@@ -10,10 +10,12 @@ object VehicleDashboardStateReducer {
         nowMs: Long,
         commandResult: Int?,
     ): VehicleDashboardUiState {
-        // 只有已连接且时间差严格超过三秒时才算过期，三秒边界仍视为新鲜。
+        val ageMs = snapshot?.let { nowMs - it.updatedAtElapsedRealtime }
+        // 未来时间戳不能证明数据新鲜，必须按过期处理以免意外开放危险操作。
         val stale = status != VehicleConnectionStatus.CONNECTED ||
-            snapshot == null ||
-            nowMs - snapshot.updatedAtElapsedRealtime > STALE_AFTER_MS
+            ageMs == null ||
+            ageMs < 0L ||
+            ageMs > STALE_AFTER_MS
         return VehicleDashboardUiState(
             connectionStatus = status,
             snapshot = snapshot,

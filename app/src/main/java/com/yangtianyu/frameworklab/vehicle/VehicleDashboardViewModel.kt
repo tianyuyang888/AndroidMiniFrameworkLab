@@ -95,6 +95,7 @@ class VehicleDashboardViewModel(
         private val applicationContext = context.applicationContext
 
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            requireDashboardModelClass(modelClass)
             val forwardingListener = ForwardingVehicleListener()
             val client = VehicleServiceClient(applicationContext, forwardingListener)
             val viewModel = VehicleDashboardViewModel(client)
@@ -106,5 +107,12 @@ class VehicleDashboardViewModel(
 
     private companion object {
         const val STALE_REFRESH_INTERVAL_MS = 1_000L
+    }
+}
+
+/** 在创建任何客户端资源前拒绝 Factory 不支持的 ViewModel 类型。 */
+internal fun requireDashboardModelClass(modelClass: Class<*>) {
+    require(modelClass.isAssignableFrom(VehicleDashboardViewModel::class.java)) {
+        "VehicleDashboardViewModel.Factory cannot create ${modelClass.name}"
     }
 }

@@ -54,6 +54,34 @@ class VehicleDashboardStateReducerTest {
     }
 
     @Test
+    fun futureSnapshotIsStaleAndCannotEnableDangerousActions() {
+        val state = VehicleDashboardStateReducer.reduce(
+            VehicleConnectionStatus.CONNECTED,
+            snapshot.copy(updatedAtElapsedRealtime = 2_001L),
+            2_000L,
+            null,
+        )
+
+        assertTrue(state.isDataStale)
+        assertFalse(state.canUnlockAllDoors)
+        assertFalse(state.canEditSimulation)
+    }
+
+    @Test
+    fun nullSnapshotIsStaleAndCannotEnableDangerousActions() {
+        val state = VehicleDashboardStateReducer.reduce(
+            VehicleConnectionStatus.CONNECTED,
+            null,
+            2_000L,
+            null,
+        )
+
+        assertTrue(state.isDataStale)
+        assertFalse(state.canUnlockAllDoors)
+        assertFalse(state.canEditSimulation)
+    }
+
+    @Test
     fun movingStateDisablesDoorUnlockAndSimulationEditing() {
         val moving = snapshot.copy(speedKph = 20, gear = VehicleGear.DRIVE)
         val state = VehicleDashboardStateReducer.reduce(
