@@ -7,8 +7,8 @@ import android.os.IBinder
 import android.os.Process
 import android.os.RemoteCallbackList
 import android.os.SystemClock
-import java.util.concurrent.Callable
 import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 
@@ -20,6 +20,11 @@ import java.util.concurrent.TimeUnit
 class VehicleDataService : Service() {
     private val callbacks = RemoteCallbackList<IVehicleStateCallback>()
     private val stateExecutor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
+    private val commandExecutor = TimedVehicleCommandExecutor(
+        executor = stateExecutor,
+        timeout = 2,
+        timeoutUnit = TimeUnit.SECONDS,
+    )
     @Volatile
     private var isAutoSimulationPaused = false
     private val store = VehicleStateStore(
@@ -141,15 +146,20 @@ class VehicleDataService : Service() {
     /**
      * Binder 调用线程等待串行状态线程的结果，并设置超时避免客户端无限阻塞。
      */
-    private fun command(block: () -> Int): Int = try {
-        stateExecutor.submit(Callable(block)).get(2, TimeUnit.SECONDS)
-    } catch (_: Exception) {
-        VehicleCommandResult.SERVICE_UNAVAILABLE
-    }
+    private fun command(block: () -> Int): Int = commandExecutor.execute(block)
 
     private fun publish(snapshot: VehicleSnapshot) {
         if (!store.updateIfValid(snapshot)) return
 
+        try {
+            // 状态提交完成即可返回命令结果；回调另行排队，避免拖长 Binder 同步等待。
+            stateExecutor.execute { broadcast(snapshot) }
+        } catch (_: RejectedExecutionException) {
+            // Service 正在销毁时执行器可能拒绝回调任务，状态线程无需因此崩溃。
+        }
+    }
+
+    private fun broadcast(snapshot: VehicleSnapshot) {
         val count = callbacks.beginBroadcast()
         try {
             repeat(count) { index ->
