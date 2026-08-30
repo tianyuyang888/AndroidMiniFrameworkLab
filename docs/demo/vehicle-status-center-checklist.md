@@ -13,7 +13,7 @@
 ## 自动验证
 
 - [ ] `adb devices -l` 能看到状态为 `device` 的目标设备。
-- [x] `./gradlew test assembleDebug assembleRelease lintDebug --rerun-tasks --console=plain` 成功（2026-08-30：63 个测试，0 failures/errors）。
+- [x] `./gradlew test assembleDebug assembleRelease lintDebug --rerun-tasks --console=plain` 成功（2026-08-30：65 个测试，0 failures/errors）。
 - [ ] 在线设备上执行 `./gradlew connectedDebugAndroidTest --rerun-tasks --console=plain` 成功。
 - [x] 确认 Debug APK 位于 `app/build/outputs/apk/debug/app-debug.apk`（2026-08-30：6,113,027 bytes）。
 

@@ -167,14 +167,15 @@ class VehicleServiceClient(
         val executor = executorOwner.acquire()
         executor.execute {
             try {
-                binder.linkToDeath(deathRecipient, 0)
-                connectedService.registerCallback(callback)
-                val firstSnapshot = connectedService.currentSnapshot
+                VehicleConnectionInitializer(
+                    linkToDeath = { binder.linkToDeath(deathRecipient, 0) },
+                    registerCallback = { connectedService.registerCallback(callback) },
+                ).initialize()
                 mainHandler.post {
                     if (!isActive(session) || session.binder !== binder) return@post
                     attemptsMade = 0
                     session.disconnectHandled = false
-                    listener.onSnapshot(firstSnapshot)
+                    // 连接成功与首帧解耦；首帧只从 Service 的有序 callback 路径到达。
                     notifyStatus(VehicleConnectionStatus.CONNECTED)
                 }
             } catch (_: RemoteException) {
