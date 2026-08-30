@@ -8,7 +8,7 @@ import android.os.Process
 import android.os.RemoteCallbackList
 import android.os.SystemClock
 import java.util.concurrent.Executors
-import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 
@@ -20,6 +20,14 @@ import java.util.concurrent.TimeUnit
 class VehicleDataService : Service() {
     private val callbacks = RemoteCallbackList<IVehicleStateCallback>()
     private val stateExecutor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
+    private val callbackExecutor: ExecutorService = Executors.newSingleThreadExecutor()
+    private val callbackDispatcher = OrderedCallbackDispatcher(
+        executor = callbackExecutor,
+        registerCallback = callbacks::register,
+        unregisterCallback = callbacks::unregister,
+        deliverInitial = { callback, snapshot -> callback.onVehicleSnapshotChanged(snapshot) },
+        broadcastSnapshot = ::broadcast,
+    )
     private val commandExecutor = TimedVehicleCommandExecutor(
         executor = stateExecutor,
         timeout = 2,
@@ -37,20 +45,14 @@ class VehicleDataService : Service() {
         override fun registerCallback(callback: IVehicleStateCallback?) {
             if (callback == null) return
             stateExecutor.execute {
-                callbacks.register(callback)
-                try {
-                    // 注册后立即推送首帧，客户端无需等待下一次定时刷新。
-                    callback.onVehicleSnapshotChanged(store.current())
-                } catch (_: Exception) {
-                    // 单个客户端失效不能影响状态线程和其他客户端。
-                    callbacks.unregister(callback)
-                }
+                // 在状态线程捕获快照，再按同一状态顺序排入回调队列，避免首帧倒序。
+                callbackDispatcher.registerWithInitial(callback, store.current())
             }
         }
 
         override fun unregisterCallback(callback: IVehicleStateCallback?) {
             if (callback != null) {
-                stateExecutor.execute { callbacks.unregister(callback) }
+                stateExecutor.execute { callbackDispatcher.unregister(callback) }
             }
         }
 
@@ -137,9 +139,9 @@ class VehicleDataService : Service() {
     }
 
     override fun onDestroy() {
-        callbacks.kill()
         // 取消定时刷新和排队指令，避免 Service 销毁后线程继续存活。
         stateExecutor.shutdownNow()
+        callbackDispatcher.close(callbacks::kill)
         super.onDestroy()
     }
 
@@ -151,12 +153,8 @@ class VehicleDataService : Service() {
     private fun publish(snapshot: VehicleSnapshot) {
         if (!store.updateIfValid(snapshot)) return
 
-        try {
-            // 状态提交完成即可返回命令结果；回调另行排队，避免拖长 Binder 同步等待。
-            stateExecutor.execute { broadcast(snapshot) }
-        } catch (_: RejectedExecutionException) {
-            // Service 正在销毁时执行器可能拒绝回调任务，状态线程无需因此崩溃。
-        }
+        // 状态提交完成即可返回命令结果；独立回调队列不会拖长 Binder 同步等待。
+        callbackDispatcher.broadcast(snapshot)
     }
 
     private fun broadcast(snapshot: VehicleSnapshot) {

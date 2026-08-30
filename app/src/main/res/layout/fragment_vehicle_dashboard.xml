@@ -186,11 +186,57 @@
                 android:layout_height="wrap_content"
                 android:text="@string/vehicle_retry" />
 
-            <Button
-                android:id="@+id/simulate_disconnect_button"
+            <TextView
+                android:id="@+id/command_result_text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/vehicle_simulate_disconnect" />
+                android:padding="8dp"
+                android:textColor="@color/vehicle_ok"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/debug_console"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/vehicle_debug_console_title"
+                    android:textColor="@color/vehicle_text_primary"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/vehicle_debug_console_hint"
+                    android:textColor="@color/vehicle_text_secondary" />
+
+                <Button
+                    android:id="@+id/simulate_parked_button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/vehicle_simulate_parked" />
+
+                <Button
+                    android:id="@+id/simulate_driving_button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/vehicle_simulate_driving" />
+
+                <Button
+                    android:id="@+id/simulate_rear_right_door_button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/vehicle_simulate_rear_right_door" />
+
+                <Button
+                    android:id="@+id/simulate_disconnect_button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/vehicle_simulate_disconnect" />
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 </ScrollView>

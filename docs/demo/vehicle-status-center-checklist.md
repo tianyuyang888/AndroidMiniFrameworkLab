@@ -13,14 +13,17 @@
 ## 自动验证
 
 - [ ] `adb devices -l` 能看到状态为 `device` 的目标设备。
-- [x] `./gradlew test assembleDebug --rerun-tasks --console=plain` 成功（2026-08-30：56 个测试，0 failures/errors/skipped）。
+- [x] `./gradlew test assembleDebug assembleRelease lintDebug --rerun-tasks --console=plain` 成功（2026-08-30：63 个测试，0 failures/errors）。
 - [ ] 在线设备上执行 `./gradlew connectedDebugAndroidTest --rerun-tasks --console=plain` 成功。
-- [x] 确认 Debug APK 位于 `app/build/outputs/apk/debug/app-debug.apk`（2026-08-30：6,098,599 bytes）。
+- [x] 确认 Debug APK 位于 `app/build/outputs/apk/debug/app-debug.apk`（2026-08-30：6,113,027 bytes）。
 
 ## 页面与数据流
 
 - [ ] 从 RecyclerView 首页点击 **Vehicle Status Center**，成功进入车辆状态中心。
 - [ ] 页面先显示“连接中”，随后显示“已连接”并收到首帧车辆快照。
+- [ ] Debug 控制台可分别触发停车、行驶、右后门打开；行驶后预设按钮禁用，直到模拟器回到停车 P 挡。
+- [ ] 页面始终同时显示四门开关与总锁状态；解锁后显示 unlocked，并出现成功结果提示。
+- [ ] 参数错误、行驶拒绝、服务不可用和 Debug 限制均显示对应用户提示。
 - [ ] 车速按模拟序列周期变化；车辆行驶时“解锁所有车门”按钮禁用并显示限制提示。
 - [ ] 模拟序列回到停车状态后点击解锁，指令成功且门锁状态发生改变。
 - [ ] 反复调节空调温度，确认有效边界为 16～30；越界指令返回参数错误，状态不越界。

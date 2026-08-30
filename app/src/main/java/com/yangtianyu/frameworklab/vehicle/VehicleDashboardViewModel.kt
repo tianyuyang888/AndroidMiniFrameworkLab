@@ -61,6 +61,11 @@ class VehicleDashboardViewModel(
 
     fun simulateProcessDeath() = client.requestSimulatedProcessDeath()
 
+    fun applySimulationPreset(preset: VehicleSimulationPreset) {
+        val current = snapshot ?: return
+        client.setSimulationSnapshot(VehicleSimulationPresetBuilder.build(preset, current, nowMs()))
+    }
+
     override fun onConnectionChanged(status: VehicleConnectionStatus) {
         this.status = status
         publish()

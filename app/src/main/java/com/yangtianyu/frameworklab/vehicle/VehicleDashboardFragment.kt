@@ -29,8 +29,17 @@ class VehicleDashboardFragment : Fragment(R.layout.fragment_vehicle_dashboard) {
         binding.unlockDoorsButton.setOnClickListener { viewModel.unlockAllDoors() }
         binding.retryButton.setOnClickListener { viewModel.retry() }
         binding.simulateDisconnectButton.setOnClickListener { viewModel.simulateProcessDeath() }
+        binding.simulateParkedButton.setOnClickListener {
+            viewModel.applySimulationPreset(VehicleSimulationPreset.PARKED)
+        }
+        binding.simulateDrivingButton.setOnClickListener {
+            viewModel.applySimulationPreset(VehicleSimulationPreset.DRIVING)
+        }
+        binding.simulateRearRightDoorButton.setOnClickListener {
+            viewModel.applySimulationPreset(VehicleSimulationPreset.REAR_RIGHT_DOOR_OPEN)
+        }
         val isDebuggable = requireContext().applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
-        binding.simulateDisconnectButton.visibility = if (isDebuggable) View.VISIBLE else View.GONE
+        binding.debugConsole.visibility = if (isDebuggable) View.VISIBLE else View.GONE
         viewModel.uiState.observe(viewLifecycleOwner, ::render)
     }
 
@@ -63,8 +72,15 @@ class VehicleDashboardFragment : Fragment(R.layout.fragment_vehicle_dashboard) {
         binding.acButton.isEnabled = hasFreshSnapshot
         binding.unlockDoorsButton.isEnabled = !state.isDataStale && state.canUnlockAllDoors
         binding.simulateDisconnectButton.isEnabled = state.connectionStatus == VehicleConnectionStatus.CONNECTED
+        val canUsePresets = state.connectionStatus == VehicleConnectionStatus.CONNECTED &&
+            !state.isDataStale &&
+            state.canEditSimulation
+        binding.simulateParkedButton.isEnabled = canUsePresets
+        binding.simulateDrivingButton.isEnabled = canUsePresets
+        binding.simulateRearRightDoorButton.isEnabled = canUsePresets
         binding.restrictionText.visibility =
             if (!state.isDataStale && state.canUnlockAllDoors) View.GONE else View.VISIBLE
+        renderCommandResult(state.commandResult)
 
         val snapshot = state.snapshot
         if (snapshot == null) {
@@ -95,17 +111,35 @@ class VehicleDashboardFragment : Fragment(R.layout.fragment_vehicle_dashboard) {
         binding.temperatureText.text = getString(R.string.vehicle_temperature_value, snapshot.temperatureCelsius)
         binding.fanText.text = getString(R.string.vehicle_fan_value, snapshot.fanSpeed)
         binding.acButton.text = getString(if (snapshot.isAcOn) R.string.vehicle_ac_on else R.string.vehicle_ac_off)
-        val allDoorsClosed = !snapshot.isFrontLeftDoorOpen &&
-            !snapshot.isFrontRightDoorOpen &&
-            !snapshot.isRearLeftDoorOpen &&
-            !snapshot.isRearRightDoorOpen
+        val doors = VehicleDashboardDisplayMapper.doorDisplay(snapshot)
         binding.doorStatusText.text = getString(
-            when {
-                allDoorsClosed -> R.string.vehicle_all_doors_closed
-                snapshot.isRearRightDoorOpen -> R.string.vehicle_rear_right_door_open
-                else -> R.string.vehicle_one_or_more_doors_open
-            },
+            R.string.vehicle_door_status_format,
+            doorStateText(doors.isFrontLeftOpen),
+            doorStateText(doors.isFrontRightOpen),
+            doorStateText(doors.isRearLeftOpen),
+            doorStateText(doors.isRearRightOpen),
+            getString(if (doors.areDoorsLocked) R.string.vehicle_locked else R.string.vehicle_unlocked),
         )
+    }
+
+    private fun doorStateText(isOpen: Boolean): String =
+        getString(if (isOpen) R.string.vehicle_door_open else R.string.vehicle_door_closed)
+
+    private fun renderCommandResult(result: Int?) {
+        val message = VehicleDashboardDisplayMapper.commandResult(result)
+        binding.commandResultText.visibility = if (message == null) View.GONE else View.VISIBLE
+        binding.commandResultText.text = message?.let {
+            getString(
+                when (it) {
+                    CommandResultMessage.SUCCESS -> R.string.vehicle_command_success
+                    CommandResultMessage.INVALID_ARGUMENT -> R.string.vehicle_command_invalid_argument
+                    CommandResultMessage.REJECTED_WHILE_DRIVING -> R.string.vehicle_command_rejected_driving
+                    CommandResultMessage.SERVICE_UNAVAILABLE -> R.string.vehicle_command_service_unavailable
+                    CommandResultMessage.DEBUG_ONLY -> R.string.vehicle_command_debug_only
+                    CommandResultMessage.UNKNOWN -> R.string.vehicle_command_unknown
+                },
+            )
+        }.orEmpty()
     }
 
     override fun onDestroyView() {

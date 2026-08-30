@@ -28,6 +28,8 @@
 
 ## 4. 线程模型
 
+**补充：** 状态写入与同步指令位于状态单线程；注册、注销和广播位于另一条 FIFO 回调单线程。状态线程按提交顺序向回调队列投递事件，因此注册首帧不会被更早的广播倒序覆盖，同时慢回调也不会占用同步指令的两秒等待预算。
+
 **结论：** Service 的 Binder 线程只接收请求，所有状态写入进入单线程 `ScheduledExecutorService`，从而串行化模拟刷新和控制指令。同步指令有两秒超时，超时或中断会取消尚未开始的任务，防止客户端收到失败后排队指令又迟到修改状态。客户端也把同步 AIDL 调用放到可重启的单线程执行器，Binder 回调再投递到主线程；Fragment 只观察 LiveData 并更新 XML View。
 
 **代码位置：** `mini-vehicle-service/src/main/java/com/yangtianyu/frameworklab/vehicle/VehicleDataService.kt`、`mini-vehicle-service/src/main/java/com/yangtianyu/frameworklab/vehicle/TimedVehicleCommandExecutor.kt`、`app/src/main/java/com/yangtianyu/frameworklab/vehicle/VehicleServiceClient.kt`、`app/src/main/java/com/yangtianyu/frameworklab/vehicle/VehicleDashboardViewModel.kt`。
@@ -44,6 +46,8 @@
 
 ## 6. 客户端与服务端双重安全校验
 
+**补充：** Debug 控制台提供停车、行驶和右后门打开预设，只有停车 P 挡且数据新鲜时可用；Release 整体隐藏。页面还会显示四门开关、总锁状态和 SUCCESS 等各类指令结果，Service 仍负责最终校验。
+
 **结论：** UI reducer 只在连接正常、数据未过期、车速为 0 且挡位为 P 时开放全车解锁，减少误操作；Service 仍以自己的最新快照再次执行 `DrivingRestrictionPolicy`，因为 UI 状态可能陈旧、被绕过或来自其他调用方。温度在 Service 端限制为 16～30，Debug 指令在非 debuggable 构建返回 `DEBUG_ONLY`。这只是教学级防护，不等同于功能安全认证。
 
 **代码位置：** `app/src/main/java/com/yangtianyu/frameworklab/vehicle/VehicleDashboardStateReducer.kt`、`app/src/main/java/com/yangtianyu/frameworklab/vehicle/VehicleDashboardFragment.kt`、`mini-vehicle-service/src/main/java/com/yangtianyu/frameworklab/vehicle/DrivingRestrictionPolicy.kt`、`mini-vehicle-service/src/main/java/com/yangtianyu/frameworklab/vehicle/VehicleDataService.kt`。
@@ -51,6 +55,8 @@
 **可追问问题：** 为什么 UI 禁用不能代替服务端校验？快照超过三秒为什么要按过期处理？真实车辆控制还需要哪些权限、身份和安全机制？
 
 ## 7. 测试策略
+
+**补充：** 新增纯 JVM 测试覆盖回调 FIFO 与注册首帧顺序、四门和门锁显示映射、全部指令结果映射以及三类模拟预设构造。
 
 **结论：** 纯 JVM 单元测试覆盖快照范围、状态存储、模拟序列、驾驶策略、命令超时取消、重连边界、代次过滤、执行器生命周期、UI reducer 和首页导航。仪器测试覆盖真实 Android 环境中的 Service 绑定、首帧、指令结果与 Debug 接口。最后用 `test assembleDebug` 做完整构建；有在线设备时再运行 `connectedDebugAndroidTest`，横屏布局和进程状态仍需手工验收。
 

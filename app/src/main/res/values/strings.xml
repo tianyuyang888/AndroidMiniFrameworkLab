@@ -44,4 +44,20 @@
     <string name="vehicle_restriction_active">Unavailable while driving or while data is stale</string>
     <string name="vehicle_retry">Retry connection</string>
     <string name="vehicle_simulate_disconnect">Simulate service disconnect</string>
+    <string name="vehicle_door_status_format">FL: %1$s · FR: %2$s · RL: %3$s · RR: %4$s · Locks: %5$s</string>
+    <string name="vehicle_door_open">open</string>
+    <string name="vehicle_door_closed">closed</string>
+    <string name="vehicle_locked">locked</string>
+    <string name="vehicle_unlocked">unlocked</string>
+    <string name="vehicle_command_success">Command succeeded</string>
+    <string name="vehicle_command_invalid_argument">Invalid command argument</string>
+    <string name="vehicle_command_rejected_driving">Command rejected while driving</string>
+    <string name="vehicle_command_service_unavailable">Vehicle service unavailable</string>
+    <string name="vehicle_command_debug_only">This command is available only in Debug builds</string>
+    <string name="vehicle_command_unknown">Unknown command result</string>
+    <string name="vehicle_debug_console_title">Debug simulation console</string>
+    <string name="vehicle_debug_console_hint">Presets are editable only while parked. After switching to driving, wait for the simulator to return to P before choosing another preset.</string>
+    <string name="vehicle_simulate_parked">Parked</string>
+    <string name="vehicle_simulate_driving">Driving</string>
+    <string name="vehicle_simulate_rear_right_door">Rear-right door open</string>
 </resources>
